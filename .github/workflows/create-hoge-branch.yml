@@ -1,0 +1,45 @@
+name: Create Hoge Branch and Draft PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      ISSUE_ID:
+        description: "ISSUE_ID (例: 1234)"
+        required: true
+        type: string
+      BranchSuffix:
+        description: "ブランチのサフィックス (例: add-crud)"
+        required: true
+        type: string
+
+jobs:
+  create-branch-and-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create new branch
+        run: git checkout -b hoge/${{ github.event.inputs.ISSUE_ID }}/${{ github.event.inputs.BranchSuffix }}
+
+      - name: Create empty commit
+        run: |
+          git commit --allow-empty -m "#${{ github.event.inputs.ISSUE_ID }} create hoge branch"
+          git push -u origin hoge/${{ github.event.inputs.ISSUE_ID }}/${{ github.event.inputs.BranchSuffix }}
+
+      - name: Create draft PR with gh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            -t "Hoge: #${{ github.event.inputs.ISSUE_ID }}" \
+            -b "- #${{ github.event.inputs.ISSUE_ID }}" \
+            -B main \
+            -d
